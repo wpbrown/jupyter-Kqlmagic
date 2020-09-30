@@ -630,13 +630,16 @@ class _MyAadHelper(object):
         tenant = self._authority if subscription is None else None
         self._current_authentication_method = self._current_authentication_method = AuthenticationMethod.azcli_login_subscription if subscription is not None else AuthenticationMethod.azcli_login
         try:
-            # requires azure-cli-core to be installed
-            # from azure.cli.core._profile import _CLIENT_ID as AZCLI_CLIENT_ID
-            from azure.common.credentials import get_cli_profile 
+            from azure.identity import AzureCliCredential
             try:
-                profile = get_cli_profile()
-                credential, _subscription, _tenant = profile.get_raw_token(resource=self._resource, subscription=subscription, tenant=tenant)
-                token_type, access_token, token = credential
+                credential = AzureCliCredential()
+                access_token = credential.get_token(self._resource)
+                expires_datetime = datetime.fromtimestamp(access_token.expires_on)
+                token = {
+                    'accessToken': access_token.token,
+                    'expiresOn': expires_datetime.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    'tokenType': 'Bearer',
+                }
             except:
                 pass
         except [ImportError, ModuleNotFoundError]:
